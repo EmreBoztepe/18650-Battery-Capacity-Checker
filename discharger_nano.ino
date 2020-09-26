@@ -6,20 +6,21 @@
 U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0); 
 
 #define gatePin 10
-#define highPin A0
-#define lowPin A1
-#define batpluspin A2
-#define ledPin 9
+#define buzzerPin 5
 
-#define buttonUp 8
-#define buttonDown 7
-#define buttonOk 6
+#define highPin A2
+#define lowPin A0
+#define batpluspin A1
+
+#define buttonUp 2
+#define buttonDown 3
+#define buttonOk 4
 
 int interval = 3000; //Interval (ms) between measurements
 
 boolean set = false;
 float mAh = 0.0;
-float voltRef = 5.05; // Reference voltage (probe your 5V pin)
+float voltRef = 4.7; // Reference voltage (probe your 5V pin)
 float current = 0.0;
 float loadInputVolt = 0.0;
 float battVolt = 0.0;
@@ -32,18 +33,15 @@ unsigned long millisPassed = 0;
 void setup() {
     
   u8g2.begin();
-  Serial.begin(9600);
-  Serial.println("Battery Capacity Checker v1.1");
   
   pinMode(gatePin, OUTPUT);
-  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
   pinMode(buttonUp, INPUT);
   pinMode(buttonDown, INPUT);
   pinMode(buttonOk, INPUT); 
   
   digitalWrite(gatePin, LOW);
-  digitalWrite(ledPin, LOW);
-
+  digitalWrite(buzzerPin, LOW);
   u8g2.clearBuffer();
   u8g2.setFont(u8g_font_unifont); 
   u8g2.drawStr(26,15,"WELCOME");
@@ -55,74 +53,65 @@ void loop() {
 
   while(!(set))
   {
-  while(! ((digitalRead(buttonOk)) || (digitalRead(buttonDown)) ||(digitalRead(buttonUp))) );
-  
-  if(digitalRead(buttonDown))
-  {
-    while(digitalRead(buttonDown));
-    battLow -= 0.5;
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g_font_unifont); 
-    u8g2.setCursor(0,28);
-    u8g2.print(battLow);
-    u8g2.sendBuffer();
-  }
-  else if(digitalRead(buttonUp))
-  {
-    while(digitalRead(buttonUp));
-    battLow += 0.5;
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g_font_unifont); 
-    u8g2.setCursor(0,28);
-    u8g2.print(battLow);
-    u8g2.sendBuffer();
-  }
-
-  else if(digitalRead(buttonOk))
-  {
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g_font_unifont); 
-    u8g2.setCursor(0,15);
-    u8g2.print(battLow);
-    u8g2.drawStr(0,25,"ACCEPTED");
-    u8g2.sendBuffer();
-    set = true;
-  }
-  if(battLow < 2.5)
-  {
-    battLow = 2.5;
-    u8g2.clearBuffer();
-    u8g2.setFont(u8g_font_unifont); 
-    u8g2.drawStr(0,28,"NOT VALID V");
-    u8g2.sendBuffer();
+    while(! ((digitalRead(buttonOk)) || (digitalRead(buttonDown)) ||(digitalRead(buttonUp))) );
     
-  }
- }
+    if(digitalRead(buttonDown))
+    {
+      while(digitalRead(buttonDown));
+      battLow -= 0.5;
+      u8g2.clearBuffer();
+      u8g2.setFont(u8g_font_unifont); 
+      u8g2.setCursor(0,28);
+      u8g2.print(battLow);
+      u8g2.sendBuffer();
+    }
+    
+    else if(digitalRead(buttonUp))
+    {
+      while(digitalRead(buttonUp));
+      battLow += 0.5;
+      u8g2.clearBuffer();
+      u8g2.setFont(u8g_font_unifont); 
+      u8g2.setCursor(0,28);
+      u8g2.print(battLow);
+      u8g2.sendBuffer();
+    }
   
+    else if(digitalRead(buttonOk))
+    {
+      u8g2.clearBuffer();
+      u8g2.setFont(u8g_font_unifont); 
+      u8g2.setCursor(0,15);
+      u8g2.print(battLow);
+      u8g2.drawStr(0,25,"ACCEPTED");
+      u8g2.sendBuffer();
+      set = true;
+    }
+    if(battLow < 2.5)
+    {
+      battLow = 2.5;
+      u8g2.clearBuffer();
+      u8g2.setFont(u8g_font_unifont); 
+      u8g2.drawStr(0,28,"NOT VALID V");
+      u8g2.sendBuffer();
+    }
+  }
   loadInputVolt = analogRead(highPin) * voltRef / 1024.0;
   loadOutputvolt = analogRead(lowPin) * voltRef / 1024.0;
   battVolt = analogRead(batpluspin) * voltRef / 1024.0;
   
-  if(battVolt <= 2.5)
-    {
+  if(battVolt <= 2.5){
       low_bat();
     }
-  
-  else if(battVolt >= battLow)
-    {
+  else if(battVolt >= battLow){
       discharge_bat();
     }
-  
-  else if(battVolt < battLow) //below 2.5-3.0 v cuz if battVolt lower than 2.5 prog. go in first if it'll say and say NO BAT
-    {
+  else if(battVolt < battLow){ //below 2.5-3.0 v cuz if battVolt lower than 2.5 prog. go in first if it'll say and say NO BAT
       discharge_end();
     }
-
 }
-
 void low_bat(void)
 {
-  
   u8g2.clearBuffer();
   u8g2.setFont(u8g_font_unifont); 
   u8g2.drawStr(8,25,"NO BATTERY");  
@@ -148,7 +137,6 @@ void low_bat(void)
   u8g2.sendBuffer();
   delay(1000);
 }
-
 void discharge_bat(void){
       
       digitalWrite(gatePin, HIGH);
@@ -163,13 +151,15 @@ void discharge_bat(void){
       u8g2.print(mAh);
       u8g2.setCursor (0, 30);
       u8g2.print(battVolt);
+      u8g2.setCursor (70, 30);
+      u8g2.print(current);
       u8g2.drawStr(90,15, "mAH");
-      u8g2.drawStr(90,30, "V");
+      u8g2.drawStr(35,30, "V");
+      u8g2.drawStr(110,30, "A");
       u8g2.sendBuffer(); 
       
       delay(interval);
 }
-
 void discharge_end(void){
       digitalWrite(gatePin, LOW);
     
@@ -179,6 +169,11 @@ void discharge_end(void){
       u8g2.print(mAh);
       u8g2.drawStr(90,30, "done");
       u8g2.sendBuffer(); 
-      digitalWrite(ledPin, HIGH);
-      while(1);
+      
+      while(1){                       //ending loop// you should restart your nano now.
+        digitalWrite(buzzerPin, HIGH);
+        delay(500);
+        digitalWrite(buzzerPin, LOW);
+        delay(500);
+      }
 }
