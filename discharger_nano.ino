@@ -14,7 +14,7 @@ U8G2_SSD1306_128X32_UNIVISION_F_HW_I2C u8g2(U8G2_R0);
 
 #define buttonUp 2
 #define buttonDown 3
-#define buttonOk 4
+#define buttonOk 4    // okey butonu
 
 int interval = 3000; //Interval (ms) between measurements
 
